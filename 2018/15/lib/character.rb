@@ -3,10 +3,11 @@ class Character
 
   include Comparable
 
-  def initialize(map, type, tile)
+  def initialize(map, type, tile, attack_power)
     @map = map
     @type = type
     @hp = 200
+    @attack_power = attack_power
     @tile = tile
     @declared_victory = false
   end
@@ -15,8 +16,8 @@ class Character
     tile <=> other.tile
   end
 
-  def damage
-    @hp -= 3
+  def damage(damage)
+    @hp -= damage
 
     @map.kill(self) if dead?
   end
@@ -58,7 +59,9 @@ class Character
 
   def attack
     weakest = targets_in_range.map(&:hp).min
-    targets_in_range.sort.detect { |enemy| enemy.hp == weakest }.damage
+    targets_in_range.sort.detect do |enemy|
+      enemy.hp == weakest
+    end.damage(@attack_power)
   end
 
   def move_towards(tile)
@@ -82,7 +85,7 @@ class Character
     min_distance = result.map(&:distance).min
 
     if min_distance && min_distance < Float::INFINITY
-      result.detect { |tile| tile.distance == min_distance }
+      result.sort.detect { |tile| tile.distance == min_distance }
     end
   end
 end
