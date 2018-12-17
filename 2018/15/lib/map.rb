@@ -10,15 +10,17 @@ class Map
     @round = 0
   end
 
-  def self.parse(string)
+  def self.parse(string, elf_attack_power = 3)
     map = new
     string.split("\n").each_with_index do |row, y|
       row.split('').each_with_index do |chr, x|
         unless chr == '#'
           tile = Tile.new(map, x, y)
 
-          if chr == 'G' || chr == 'E'
-            map.add_character Character.new(map, chr, tile)
+          if chr == 'G'
+            map.add_character Character.new(map, chr, tile, 3)
+          elsif chr == 'E'
+            map.add_character Character.new(map, chr, tile, elf_attack_power)
           end
 
           map << tile
@@ -29,7 +31,7 @@ class Map
   end
 
   def all_tiles
-    @tiles.flatten.compact
+    @tiles.flatten.compact.sort
   end
 
   def dig(x, y)
