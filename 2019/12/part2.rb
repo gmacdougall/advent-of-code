@@ -13,6 +13,21 @@ class Moon
     @vel_x = 0
     @vel_y = 0
     @vel_z = 0
+
+    @history = {
+      x: [x],
+      y: [y],
+      z: [z],
+    }
+    @period = {
+      x: nil,
+      y: nil,
+      z: nil
+    }
+  end
+
+  def period
+    @period.values.reduce(1, :lcm)
   end
 
   def change_velocity(target)
@@ -39,6 +54,12 @@ class Moon
     @x += vel_x
     @y += vel_y
     @z += vel_z
+
+    @history[:x] << x
+    @history[:y] << y
+    @history[:z] << z
+
+    check_period
   end
 
   def vars
@@ -52,6 +73,33 @@ class Moon
   def to_s
     "pos=<x=#{x.to_s.rjust(3)}, y=#{y.to_s.rjust(3)}, z=#{z.to_s.rjust(3)}>, " \
       "vel=<#{vel_x.to_s.rjust(3)}, y=#{vel_y.to_s.rjust(3)}, z=#{vel_z.to_s.rjust(3)}>"
+  end
+
+  def still_searching?
+    @period.values.any?(&:nil?)
+  end
+
+  private
+
+  def check_period
+    %i[x y z].each do |var|
+      a = @history[var]
+      next unless @period[var].nil? && a.length % 2 == 0
+
+      iterations = a.length / 2
+
+      success = true
+      iterations.times do |n|
+        if a[n] != a[iterations + n]
+          success = false
+          break
+        end
+      end
+
+      if success
+        @period[var] = a.length / 2
+      end
+    end
   end
 end
 
@@ -71,43 +119,12 @@ end
 
 step = 0
 
-moon_history = [
-  [],
-  [],
-  [],
-  []
-]
-
-dups = [
-  Set.new,
-  Set.new,
-  Set.new,
-  Set.new,
-]
-
-first_dup = []
-
-2_000_000.times do
+while moons.any?(&:still_searching?)
   step += 1
   moons.permutation(2).each do |source, target|
     source.change_velocity(target)
   end
   moons.each(&:apply_velocity)
-
-  moons.each_with_index do |m, i|
-    if first_dup[i].nil? && dups[i].include?(m.vars)
-      first_dup[i] = m.vars
-    else
-      dups[i] << m.vars
-    end
-    moon_history[i] << m.vars
-  end
 end
 
-cycles = moon_history.each_with_index.map do |mh, idx|
-  first = mh[1_000_000]
-  mh.each_index.select { |i| mh[i] == first }
-end
-
-puts cycles.inspect
-
+puts moons.map(&:period).reduce(1, :lcm)
