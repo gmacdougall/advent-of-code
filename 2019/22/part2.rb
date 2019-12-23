@@ -4,6 +4,8 @@ COMMANDS = File.read(ARGV.fetch(0)).strip.split("\n")
 
 SIZE = 119315717514047
 
+# I thought this would work. I didn't
+
 def compute(idx, step)
   if step == 0
     idx
