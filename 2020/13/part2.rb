@@ -8,13 +8,13 @@ start = 0
 increment = 1
 
 RUNNING_BUS_IDS.length.times do |num|
-  bus_ids = RUNNING_BUS_IDS.first(num + 1)
+  bus_ids = RUNNING_BUS_IDS.sort.last(num + 1)
 
-  start, last = (start..10**100).step(increment).lazy.select do |time|
+  start = (start..).step(increment).find do |time|
     bus_ids.all? { |id| ((time + BUS_IDS.index(id)) % id).zero? }
-  end.first(2)
+  end
 
-  increment = last - start
+  increment = bus_ids.inject(1, &:lcm)
 end
 
 p start
