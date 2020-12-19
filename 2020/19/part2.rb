@@ -12,7 +12,7 @@ def resolve(rule)
   if rule == 'RULE_8'
     "(#{resolve('42')})+"
   elsif rule == 'RULE_11'
-    '(' + (1..10).map { |n| ('42 ' * n).strip + (' 31' * n) }.map { |re| resolve(re) }.join('|') + ')'
+    "(?<rule11>#{resolve('42')}\\g<rule11>*#{resolve('31')})"
   elsif rule.start_with?('"')
     rule.gsub('"', '')
   elsif rule.include?(' | ')
@@ -23,5 +23,6 @@ def resolve(rule)
 end
 
 re = /^#{resolve(RULES.fetch('0'))}$/
+p re
 result = values.count { |val| val.match(re) }
 p result
