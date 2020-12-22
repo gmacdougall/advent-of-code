@@ -1,6 +1,8 @@
 #! /usr/bin/env ruby
 # frozen_string_literal: true
 
+require 'set'
+
 input = ARGF.read.split("\n\n")
 cards = input.map do |i|
   _, *cards = i.split("\n")
@@ -9,13 +11,14 @@ end
 
 def combat(game, p1, p2)
   # puts "=== Game #{game} ===\n\n"
-  states = []
+  states = Set.new
   round = 1
   while p1.any? && p2.any?
-    if states.include?([p1, p2])
+    hash = [p1, p2].hash
+    if states.include?(hash)
       return true
     end
-    states << [p1.dup, p2.dup]
+    states << hash
 
     # puts "-- Round #{round} (Game #{game}) --\n\n"
     # puts "Player 1's deck: #{p1.join(', ')}"
