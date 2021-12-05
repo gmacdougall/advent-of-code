@@ -1,11 +1,11 @@
 #! /usr/bin/env ruby
 # frozen_string_literal: true
 
-input = ARGF.each_line.map { |line| line.match(/(\d+),(\d+) -> (\d+),(\d+)/).to_a.last(4).map(&:to_i) }
+input = ARGF.map { |l| l.scan(/(\d+)/).flatten.map(&:to_i) }
 map = Hash.new(0)
 
-def enumerate(val1, val2)
-  val1.public_send(val1 < val2 ? :upto : :downto, val2).to_a
+def enumerate(start, finish)
+  start.public_send(start < finish ? :upto : :downto, finish).to_a
 end
 
 input.each do |x1, y1, x2, y2|
