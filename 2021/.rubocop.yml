@@ -6,3 +6,6 @@ AllCops:
 
 Layout/MultilineMethodCallIndentation:
   EnforcedStyle: indented
+
+Style/TrailingCommaInHashLiteral:
+  EnforcedStyleForMultiline: comma
