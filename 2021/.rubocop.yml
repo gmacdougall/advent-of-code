@@ -9,3 +9,9 @@ Layout/MultilineMethodCallIndentation:
 
 Style/TrailingCommaInHashLiteral:
   EnforcedStyleForMultiline: comma
+
+Metrics/AbcSize:
+  Enabled: false
+
+Naming/MethodParameterName:
+  Enabled: false
