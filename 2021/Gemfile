@@ -6,3 +6,4 @@ ruby '3.0.3'
 
 gem 'pry'
 gem 'rubocop'
+gem 'solargraph'
