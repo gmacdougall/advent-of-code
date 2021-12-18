@@ -16,6 +16,10 @@ Metrics/AbcSize:
 Naming/MethodParameterName:
   Enabled: false
 
+Metrics/ClassLength:
+  Exclude:
+    - "**/*test.rb"
+
 Metrics/CyclomaticComplexity:
   Enabled: false
 
