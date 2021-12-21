@@ -9,47 +9,39 @@ wins = [0, 0]
 
 game_states = [
   {
-    p1_score: 0,
-    p1_space: space[0],
-    p2_score: 0,
-    p2_space: space[1],
+    0 => { score: 0, space: space[0] },
+    1 => { score: 0, space: space[1] },
     count: 1,
   }
 ]
 
-def generate(current_state, player_score, player_space, opponent_score, opponent_space)
+player = 0
+while game_states.any?
+  opp = (player + 1) % 2
   new_game_states = {}
-  current_state.each do |poss|
+  game_states.each do |poss|
     DIE_RESULTS.each do |k, v|
-      new_space = ((k + poss[player_space]) % 10)
-      new_space = 10 if new_space.zero?
-      new_score = poss[player_score] + new_space
-      key = (new_score * 1_000_000_000) + (new_space * 1_000_000) + (poss[opponent_score] * 1000) + poss[opponent_space]
-      result = new_game_states[key]
-      unless result
-        result = {
-          player_score => new_score,
-          player_space => new_space,
-          opponent_score => poss[opponent_score],
-          opponent_space => poss[opponent_space],
-          count: 0,
-        }
-        new_game_states[key] = result
+      new_space = ((k + poss[player][:space] - 1) % 10) + 1
+      new_score = poss[player][:score] + new_space
+      if new_score >= 21
+        wins[player] += v * poss[:count]
+      else
+        key = (new_score * 1_000_000_000) + (new_space * 1_000_000) + (poss[opp][:score] * 1000) + poss[opp][:space]
+        result = new_game_states[key]
+        unless result
+          result = {
+            player => { score: new_score, space: new_space },
+            opp => { score: poss[opp][:score], space: poss[opp][:space] },
+            count: 0,
+          }
+          new_game_states[key] = result
+        end
+        result[:count] += v * poss[:count]
       end
-      result[:count] += v * poss[:count]
     end
   end
-  new_game_states.values
-end
-
-while game_states.any?
-  game_states = generate(game_states, :p1_score, :p1_space, :p2_score, :p2_space)
-  wins[0] += game_states.select { _1[:p1_score] >= 21 }.sum { _1[:count] }
-  game_states.reject! { _1[:p1_score] >= 21 }
-
-  game_states = generate(game_states, :p2_score, :p2_space, :p1_score, :p1_space)
-  wins[1] += game_states.select { _1[:p2_score] >= 21 }.sum { _1[:count] }
-  game_states.reject! { _1[:p2_score] >= 21 }
+  player = opp
+  game_states = new_game_states.values
 end
 
 puts wins.max
