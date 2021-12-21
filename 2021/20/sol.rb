@@ -3,12 +3,13 @@
 
 E_INPUT, IMAGE = ARGF.read.split("\n\n").map(&:each_line)
 ENHANCEMENT = E_INPUT.first.chars.map { _1 == '#' ? 1 : 0 }.freeze
+ENH_AREA = (-1..1)
 
 def run(times)
   output = Hash.new(0)
   IMAGE.each_with_index do |line, y|
     line.chars.each_with_index do |char, x|
-      output[[x, y]] = char == '#' ? 1 : 0
+      output[(x * 1000) + y] = char == '#' ? 1 : 0
     end
   end
 
@@ -19,11 +20,16 @@ def run(times)
 
     range.each do |y|
       range.each do |x|
-        binary_string = (-1..1).flat_map do |dy|
-          (-1..1).map { |dx| output[[x + dx, y + dy]] }
-        end.join
+        idx = 0
+        ENH_AREA.each do |dy|
+          ENH_AREA.each do |dx|
+            idx += output[((x + dx) * 1000) + y + dy]
+            idx <<= 1
+          end
+        end
+        idx >>= 1
 
-        new_output[[x, y]] = ENHANCEMENT[binary_string.to_i(2)]
+        new_output[(x * 1000) + y] = ENHANCEMENT[idx]
       end
     end
 
