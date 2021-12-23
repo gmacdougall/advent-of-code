@@ -3,6 +3,35 @@
 
 require 'set'
 
+# Borrowed from StackOverflow
+class Range
+  def intersection(other)
+    intersection_begin =
+      case
+      when include?(other.begin)
+        other.begin
+      when other.include?(self.begin)
+        self.begin
+      else
+        return nil
+      end
+
+    intersection_end, intersection_exclude_end =
+      case self.end <=> other.end
+      when -1
+        [self.end, exclude_end?]
+      when 1
+        [other.end, other.exclude_end?]
+      when 0
+        [self.end, exclude_end? || other.exclude_end?]
+      end
+
+    self.class.new(intersection_begin, intersection_end, intersection_exclude_end)
+  end
+
+  alias_method :&, :intersection # rubocop:disable Style/Alias
+end
+
 INPUT = ARGF.map do |line|
   [
     line.split.first,
@@ -11,47 +40,35 @@ INPUT = ARGF.map do |line|
 end.freeze
 
 def overlap?(range_set1, range_set2)
-  (0..2).any? { range_overlap? range_set1[_1], range_set2[_1] }
-end
-
-def range_overlap?(r1, r2)
-  !((r1.end - 1) < r2.begin || (r2.end - 1) < r1.begin)
+  (0..2).none? { (range_set1 & range_set2).nil? }
 end
 
 def set_cover?(big, small)
-  big.zip(small).all? { |b, s| b.cover? s }
+  big & small == small
+end
+
+def intersect(a, b)
+  [
+    a[0] & b[0],
+    a[1] & b[1],
+    a[2] & b[2]
+  ]
+end
+
+cubes = {}
+INPUT.each do |i|
+  cubes.dup.each do |c, count|
+    int = intersect(i.last, c)
+    next if int.any?(&:nil?)
+
+    cubes[int] ||= 0
+    cubes[int] -= count
+  end
+  cubes[i.last] ||= 0
+  cubes[i.last] += 1 if i.first == 'on'
 end
 
 def area(ranges)
   ranges.map(&:minmax).map { |a, b| b - a }.inject(:*)
 end
-
-cubes = Set.new
-INPUT.each do |i|
-  puts cubes.length
-  intersections = cubes.select { overlap?(_1, i.last) }
-
-  if intersections.any?
-    intersections.each do |inter|
-      cubes.delete(inter)
-
-      split = inter.each_with_index.map do |range, idx|
-        (range.minmax + i.last[idx].minmax)
-          .sort
-          .each_cons(2).to_a.map { |a, b| Range.new(a, b) }
-      end.inject(&:product).map(&:flatten)
-
-      split.each do |s|
-        if i.first == 'on'
-          cubes.add(s) if set_cover?(inter, s) || set_cover?(i.last, s)
-        elsif set_cover?(inter, s) && !set_cover?(i.last, s)
-          cubes.add(s)
-        end
-      end
-    end
-  elsif i.first == 'on'
-    cubes.add(i.last)
-  end
-end
-
-puts cubes.sum { area _1 }
+puts(cubes.sum { |r, count| area(r) * count })
