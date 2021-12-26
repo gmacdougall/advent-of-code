@@ -22,8 +22,7 @@ end
 
 # TODO
 class State
-  attr_reader :hall, :origin
-  attr_accessor :score, :home
+  attr_accessor :hall, :origin, :score, :home
 
   def initialize(hall, origin, home = 0)
     @hall = hall
@@ -56,7 +55,7 @@ class State
         range = Range.new(*[idx, EXIT[home]].sort)
         next unless hall[range].compact.length == 1
 
-        new_state = deep_copy(self)
+        new_state = dup
         new_state.score += (range.size - 1) * COST[home]
         new_state.hall[idx] = nil
         new_state.home += 1
@@ -69,10 +68,13 @@ class State
     origin.each do |key, o|
       next if o.empty?
 
-      left = deep_copy(self)
+      left = dup
+      left.origin = origin.dup.transform_values(&:dup)
+      left.hall = hall.dup
       moving_char = left.origin[key].shift
       left.hall[EXIT[key]] = moving_char
-      right = deep_copy(left)
+      right = left.dup
+      right.hall = left.hall.dup
 
       # move left
       (EXIT[key] - 1).downto(0).each do |n|
@@ -82,7 +84,10 @@ class State
         left.hall[n + 1] = nil
         next if EXIT.values.include?(n)
 
-        result << deep_copy(left).tap { _1.score += (EXIT[key] - n) * COST[moving_char] }
+        result << left.dup.tap do |copy|
+          copy.hall = left.hall.dup
+          copy.score += (EXIT[key] - n) * COST[moving_char]
+        end
       end
 
       # move right
@@ -93,7 +98,10 @@ class State
         right.hall[n - 1] = nil
         next if EXIT.values.include?(n)
 
-        result << deep_copy(right).tap { _1.score += (n - EXIT[key]) * COST[moving_char] }
+        result << right.dup.tap do |copy|
+          copy.hall = right.hall.dup
+          copy.score += (n - EXIT[key]) * COST[moving_char]
+        end
       end
     end
     result
@@ -133,14 +141,8 @@ state.set_minimum_score
 to_test = [state]
 best_score = 1_000_000
 
-iter = 0
 while (state = to_test.pop)
-  iter += 1
   best_score = state.score if state.finished? && state.score < best_score
-  if (iter % 10_000).zero?
-    puts "i: #{iter}, best_score: #{best_score}"
-    puts state
-  end
 
   state.possible_moves.each do |ns|
     to_test << ns
