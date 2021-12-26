@@ -7,7 +7,6 @@ COST = {
   c: 100,
   d: 1000,
 }.freeze
-ROOM_SIZE = 4
 
 EXIT = {
   a: 2,
@@ -15,10 +14,6 @@ EXIT = {
   c: 6,
   d: 8,
 }.freeze
-
-def deep_copy(o)
-  Marshal.load(Marshal.dump(o))
-end
 
 # TODO
 class State
@@ -135,6 +130,7 @@ class State
 end
 
 INPUT = ARGF.read.gsub(/\s/, '').gsub('#', '').downcase.chars.map { _1 == '.' ? nil : _1.to_sym }.freeze
+ROOM_SIZE = (INPUT.length - 11) / 4
 state = State.from_str(INPUT)
 state.set_minimum_score
 
@@ -143,6 +139,7 @@ best_score = 1_000_000
 
 while (state = to_test.pop)
   best_score = state.score if state.finished? && state.score < best_score
+  next if state.score > best_score
 
   state.possible_moves.each do |ns|
     to_test << ns
