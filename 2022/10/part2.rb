@@ -1,18 +1,39 @@
 #! /usr/bin/env ruby
 
-cycle = 0
-x = 1
-pixels = []
+class ClockCircuit
+  WIDTH = 40
 
-input = ARGF.map(&:strip).map(&:split).each do |command, val|
-  count = command == 'addx' ? 2 : 1
-
-  count.times do
-    pixels << ((((cycle % 40) - 1)..(cycle % 40 + 1)).cover?(x) ? '#' : ' ')
-    cycle += 1
+  def initialize
+    @x = 1
+    @cycle = 0
+    @output = []
   end
 
-  x += val.to_i if command == 'addx'
+  def noop
+    tick
+  end
+
+  def addx(x)
+    2.times { tick }
+    @x += x.to_i
+  end
+
+  def to_s
+    @output.map { _1 ? '█' : ' ' }.each_slice(WIDTH).map(&:join).join("\n")
+  end
+
+  private
+
+  def tick
+    @output.push ((@cycle % WIDTH) - @x).abs <= 1
+    @cycle += 1
+  end
 end
 
-puts pixels.each_slice(40).map(&:join).join("\n")
+cc = ClockCircuit.new
+
+ARGF.map { _1.strip.split }.each do |command, *rest|
+  cc.public_send(command.to_sym, *rest)
+end
+
+puts cc
