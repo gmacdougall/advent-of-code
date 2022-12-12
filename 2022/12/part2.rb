@@ -9,26 +9,24 @@ ARGF.map(&:strip).each_with_index do |row, y|
   end
 end
 
-possible_starts = Node.nodes.values.select { _1.value == 'a'.ord }
+current = Node.start
+current.distance = 0
 finish = Node.finish
+to_eval = Set.new
 
-result = possible_starts.map do |start|
-  to_eval = Set.new
-  Node.reset
-  current = start
-  start.distance = 0
-  until finish.visited || !current
-    current.adjacent.each do |node|
-      next if node.visited
+# Only difference for part 2
+Node.nodes.values.select { _1.value == 'a'.ord }.each { _1.distance = 0 }
 
-      node.distance = [node.distance, current.distance + 1].compact.min
-      to_eval << node
-    end
-    current.visited = true
-    current = to_eval.min_by(&:distance)
-    to_eval.delete current
+until finish.visited
+  current.adjacent.each do |node|
+    next if node.visited
+
+    node.distance = [node.distance, current.distance + 1].compact.min
+    to_eval << node
   end
-  finish.distance
+  current.visited = true
+  current = to_eval.min_by(&:distance)
+  to_eval.delete current
 end
 
-p result.compact.min
+puts finish.distance
