@@ -5,17 +5,12 @@ require 'pry'
 
 class Valve
   attr_reader :name, :rate, :to
-  attr_accessor :visited, :distance, :current_rate
 
   def initialize(name, rate, to)
     @name = name
     @rate = rate
     @to = to
     self.class.all[name] = self
-
-    @total_flow_rate = 0
-    @distance = 0
-    @minutes_remaining = 0
   end
 
   def self.all
@@ -27,6 +22,7 @@ input = ARGF.map(&:strip).map { _1.gsub(',', '').split }.map do |_, name, _, _, 
   [name, { rate: rate.scan(/\d+/)[0].to_i, to: }]
 end.to_h
 TOTAL = 30
+MAX_FLOW = 30 * input.map { _2[:rate] }.sum
 
 PATHS = {}
 input.keys.each do |position|
@@ -49,63 +45,30 @@ non_empty = input.filter_map do |key, v|
   key if v[:rate] > 0
 end
 
-simple_paths = {}
+SIMPLE_PATHS = {}
 
 (["AA"] + non_empty).each do |start|
+  SIMPLE_PATHS[start] = {}
   non_empty.reject { _1 == start }.each do |finish|
-    if PATHS[start][finish].select { non_empty.include?(_1) }.first == finish
-      simple_paths[start] ||= {}
-      simple_paths[start][finish] = PATHS[start][finish].find_index(finish) + 1
-    end
+    SIMPLE_PATHS[start][finish] = PATHS[start][finish].find_index(finish) + 1
   end
 end
 
-binding.pry
-exit
+SIMPLE_PATHS.each do |name, distances|
+  Valve.new(name, input[name][:rate], distances)
+end
 
-current = 'AA'
-best_order = []
-while non_empty.length >= 2
-  what = non_empty.combination(2).map do |a, b|
-    p [a, b]
-    a_then_b = (30 - PATHS[current][a].length - 1) * input[a][:rate] + (30 - PATHS[current][a].length - PATHS[a][b].length - 2) * input[b][:rate]
-    b_then_a = (30 - PATHS[current][b].length - 1) * input[b][:rate] + (30 - PATHS[current][b].length - PATHS[b][a].length - 2) * input[a][:rate]
-
-    if b_then_a > a_then_b
-      [b, a, b_then_a]
+def dfs(path, time_remaining, flow)
+  max = SIMPLE_PATHS[path[-1]].filter_map do |k, v|
+    left = time_remaining - v - 1
+    if !path.include?(k) && left > 0
+      dfs(path + [k], left, flow + Valve.all[k].rate * left)
     else
-      [a, b, a_then_b]
+      -1
     end
-  end
-
-  best, _, _ = what.max_by(&:last)
-  best_order << best
-  non_empty.delete(best)
-  current = best
+  end.max
+  [flow, max].compact.max
 end
 
-order = best_order + non_empty
-
-position = 'AA'
-time_remaining = 30
-output = 0
-goto = order.shift
-open = []
-
-while time_remaining > 0
-  open.each do |key|
-    valve = input[key]
-    output += valve[:rate]
-  end
-
-  if goto.nil?
-    # no-op
-  elsif (goto == position)
-    open << goto
-    goto = order.shift
-  else
-    position = PATHS[position][goto].first
-  end
-  time_remaining -= 1
-end
-p output
+result = dfs(['AA'], 30, 0)
+p result
