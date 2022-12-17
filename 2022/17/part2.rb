@@ -2,19 +2,41 @@
 
 movement = ARGF.first.strip.chars
 
+WIDTH = 7
+
 SHAPES = {
   horizontal: "|..@@@@.|",
   plus: "|...@...| |..@@@..| |...@...|",
   l: "|....@..| |....@..| |..@@@..|",
   vertical: "|..@....| |..@....| |..@....| |..@....|",
   square: "|..@@...| |..@@...|",
-}.transform_values { _1.gsub(' ', '').gsub('|', '').chars.map { |c| c == '@' ? true : nil }.each_slice(7).to_a.reverse }
+}.transform_values do |v|
+  v.
+    gsub(/[^\.@]/, '').
+    chars.
+    map { _1 == '@' }.
+    each_slice(WIDTH).
+    to_a.
+    reverse
+end.freeze
 
-grid = []
+GRID = []
 
-def output(grid)
-  grid.reverse.each do |line|
-    puts line.map { _1.nil? ? '.' : '#' }.join
+def output
+  GRID.reverse.each { |line| puts line.map { _1 ? '.' : '#' }.join }
+end
+
+def collision?(shape, position)
+  shape.length.times.any? do |offset|
+    GRID[position + offset]&.zip(shape[offset])&.any? { _1 && _2 }
+  end
+end
+
+def merge(shape, position)
+  shape.each_with_index do |row, shape_idx|
+    pos = position + shape_idx
+    GRID[pos] ||= Array.new(WIDTH)
+    GRID[pos].each_with_index { |val, idx| GRID[pos][idx] = val || row[idx] }
   end
 end
 
@@ -22,65 +44,44 @@ last_1000_lines = []
 height = []
 
 (0..).each do |n|
-  while grid.last(3).length != 3 || grid.last(3).flatten.compact.any?
-    grid.push Array.new(7)
-  end
+  GRID.push Array.new(WIDTH) while GRID.length < 3 || GRID.last(3).any?(&:any?)
 
-  shape_position = grid.length
+  shape_position = GRID.length
   shape = SHAPES.values[n % SHAPES.length].map(&:dup)
 
   loop do
-    to_add = shape.map(&:dup)
-
-    dir = 1
-    dir = -1 if (movement.first == '>')
+    dir = movement.first == '>' ? -1 : 1
     movement.rotate!
 
     unless shape.map { dir == 1 ? _1.first : _1.last }.any?
-      shape.each { _1.rotate!(dir) }
-      if grid[shape_position]&.each_with_index&.any? { |val, idx| val && shape[0][idx] } ||
-        (shape[1] && grid[shape_position + 1]&.each_with_index&.any? { |val, idx| val && shape[1][idx] }) ||
-        (shape[2] && grid[shape_position + 2]&.each_with_index&.any? { |val, idx| val && shape[2][idx] }) ||
-        (shape[3] && grid[shape_position + 3]&.each_with_index&.any? { |val, idx| val && shape[3][idx] })
-        # collission: rotate back
-        shape.each { _1.rotate!(-dir) }
-      end
+      moved_shape = shape.map { _1.rotate(dir) }
+      shape = moved_shape unless collision?(moved_shape, shape_position)
     end
 
-    break if shape_position == 0
-    break if grid[shape_position - 1].each_with_index.any? { |val, idx| shape[0][idx] && val }
-    break if shape[1] && grid[shape_position] && grid[shape_position].each_with_index.any? { |val, idx| shape[1][idx] && val }
+    break if shape_position == 0 || collision?(shape, shape_position - 1)
     shape_position -= 1
   end
 
-  shape.each do |row|
-    grid[shape_position] ||= Array.new(7)
-    grid[shape_position].each_with_index do |val, idx|
-      grid[shape_position][idx] = val || row[idx]
-    end
-    shape_position += 1
-  end
+  merge(shape, shape_position)
 
-  h = grid.last(1000).hash
-  current_height = grid.reject { _1.all?(&:nil?) }.size
+  h = GRID.last(1000).hash
+  current_height = GRID.rindex { !_1.all?(&:nil?) } + 1
+
   if last_1000_lines.include?(h)
-    puts "Cycle found"
     big_number = 1_000_000_000_000
+
     cycle_start_index = last_1000_lines.find_index(h)
     cycle_size = n - cycle_start_index
     height_added_per_cycle = current_height  - height[cycle_start_index]
+    cycles_to_add = (big_number - cycle_start_index) / cycle_size
 
-    full_cycles_to_add = (big_number - n) / cycle_size
-    additional_top_up_needed = big_number - (n + full_cycles_to_add * cycle_size)
-    top_up_height = height[cycle_start_index + additional_top_up_needed] - height[cycle_start_index]
+    result = height[big_number - (cycles_to_add * cycle_size) - 1] +
+      cycles_to_add * height_added_per_cycle
 
-    # I don't know why I need - 1. I have a big off by one error
-    puts current_height + height_added_per_cycle * full_cycles_to_add  + top_up_height - 1
+    puts result
     exit
   else
     last_1000_lines << h
     height << current_height
   end
 end
-
-puts grid.reject { _1.all?(&:nil?) }.size
