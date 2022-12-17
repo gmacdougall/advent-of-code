@@ -32,7 +32,17 @@ SIMPLE_PATHS = {}
   end
 end
 
+BEST_SO_FAR = {}
+TOO_SLOW_THRESHOLD = 100
+
 def dfs(me, elephant, me_time, elephant_time, flow)
+  if (BEST_SO_FAR[me_time + elephant_time] || 0) - TOO_SLOW_THRESHOLD > flow
+    # Too slow
+    return flow
+  else
+    BEST_SO_FAR[me_time + elephant_time] = flow
+  end
+
   max = if (me_time > elephant_time)
     SIMPLE_PATHS[me[-1]].filter_map do |k, v|
       left = me_time - v - 1
