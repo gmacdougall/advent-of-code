@@ -2,7 +2,9 @@
 
 source 'https://rubygems.org'
 
+gem 'nokogiri'
+gem 'pqueue'
 gem 'pry'
 gem 'rubocop'
-gem 'pqueue'
+gem 'ruby-graphviz'
 gem 'z3'
