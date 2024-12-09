@@ -39,9 +39,9 @@ def part2(map)
 
     next if !potential || potential > current
 
-    chunked[potential] = Array.new(chunk.size) { chunk[0] } + Array.new(chunked[potential].size - chunk.size) { nil }
     chunked[current] = Array.new(chunk.size) { nil }
-    chunked = chunked.flatten.chunk(&:object_id).map(&:last)
+    chunked[potential] = Array.new(chunked[potential].size - chunk.size) { nil }
+    chunked.insert(potential, chunk)
   end
   checksum(chunked.flatten)
 end
