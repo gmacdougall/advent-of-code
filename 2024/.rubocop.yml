@@ -4,5 +4,11 @@ Naming/MethodParameterName:
 Style/Documentation:
   Enabled: false
 
+Style/GlobalVars:
+  Enabled: false
+
+Metrics/AbcSize:
+  Enabled: false
+
 Metrics/MethodLength:
   Enabled: false
