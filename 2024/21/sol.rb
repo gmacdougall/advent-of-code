@@ -7,6 +7,7 @@ using Rainbow
 class Keypad
   def initialize
     reset
+    @memo = {}
   end
 
   attr_reader :cx, :cy, :result
@@ -86,8 +87,12 @@ class Keypad
   end
 
   def type(str)
+    return @memo[str] if @memo.key?(str)
+
     reset
-    str.chars.map { predict _1 }.flatten.join
+    result = str.chars.map { predict _1 }.flatten.join
+    @memo[str] = result
+    result
   end
 end
 
@@ -141,7 +146,11 @@ class RobotKeypad < Keypad
   def key_pos = KEY_POS
 
   def type(str)
-    super @other_keypad.type(str)
+    return @memo[str] if @memo.key?(str)
+
+    result = super @other_keypad.type(str)
+    @memo[str] = result
+    result
   end
 end
 
@@ -158,7 +167,22 @@ def part1(input)
   end
 end
 
+def part2(input)
+  input.sum do |str|
+    nk = NumericKeypad.new
+    keypads = [nk]
+    12.times do |n|
+      kp = RobotKeypad.new(n, keypads.last)
+      keypads << kp
+    end
+    result = keypads.last.type(str)
+    puts "#{result.size} * #{str.to_i}"
+    result.size * str.to_i
+  end
+end
+
 puts "Part 1: #{part1(parse('input'))}"
+puts "Part 2: #{part2(parse('input'))}"
 
 require 'minitest/autorun'
 
