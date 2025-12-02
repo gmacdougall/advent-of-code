@@ -2,51 +2,19 @@
 # frozen_string_literal: true
 
 def parse(fname)
-  File.read(fname).lines.map { _1.strip.split(',').map { |s| Range.new(*s.split('-').map(&:to_i)) } }.first
+  File.read(fname).split(',').map { Range.new(*it.split('-').map(&:to_i)) }
 end
 
 def part1(input)
-  count = 0
-  input.each do |range|
-    values = range.to_a
-    values.each do |val|
-      str = val.to_s
-      len = str.length
-      next if len.odd?
-
-      mid = len / 2
-      a = str[0...mid]
-      b = str[mid..]
-
-      count += val if a == b
-    end
+  input.sum do |range|
+    range.sum { it.to_s.match?(/^(\d+)\1$/) ? it : 0 }
   end
-  count
 end
 
 def part2(input)
-  count = 0
-  input.each do |range|
-    values = range.to_a
-    values.each do |val|
-      str = val.to_s
-      len = str.length
-      chars = str.chars
-
-      (1..(len / 2)).each do |split_len|
-        next unless (str.length % split_len).zero?
-        next if split_len >= len
-
-        groups = chars.each_slice(split_len).to_a
-
-        if groups.uniq.length == 1
-          count += val
-          break
-        end
-      end
-    end
+  input.sum do |range|
+    range.sum { it.to_s.match?(/^(\d+)\1+$/) ? it : 0 }
   end
-  count
 end
 
 if File.exist?('input')
