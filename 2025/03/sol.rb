@@ -5,35 +5,19 @@ def parse(fname)
   File.read(fname).lines.map { it.strip.chars.map(&:to_i) }
 end
 
-def part1(input)
+def solve(input, count)
   input.sum do |bank|
-    max = 0
-    while bank.length > 1
-      value = bank.shift * 10 + bank.max
-      max = [max, value].max
-    end
-    max
-  end
-end
-
-def part2(input)
-  input.sum do |bank|
-    value = 0
-    left = 12
-
-    while left.positive?
-      digit = bank[0..-left].max
-      left -= 1
-
+    count.downto(1).sum do |left|
+      digit = bank[..-left].max
       pos = bank.index(digit)
-      value += digit * 10**left
-
       bank = bank[(pos + 1)..]
+      digit * 10**(left - 1)
     end
-
-    value
   end
 end
+
+def part1(input) = solve input, 2
+def part2(input) = solve input, 12
 
 if File.exist?('input')
   puts "Part 1: #{part1(parse('input'))}"
