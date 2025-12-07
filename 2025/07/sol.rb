@@ -5,13 +5,13 @@ class Node
   def initialize(x, y, split = false)
     @x = x
     @y = y
+    @visited = false
     @beam = false
     @split = split
     @@all[[x, y]] = self
   end
 
-  attr_reader :x, :y, :split
-  attr_accessor :beam
+  attr_reader :x, :y, :split, :visited
 
   def self.all = @@all
   def self.reset = @@all = {}
@@ -22,18 +22,15 @@ class Node
   def left = @@all[[x - 1, y]]
   def right = @@all[[x + 1, y]]
 
-  def activate
-    raise unless @beam
-    @beam = false
+  def part1
+    return if @visited || !down
+    @visited = true
 
-    dest = down
-    return unless dest
-    if dest.split
-      $split += 1
-      dest.left.beam = true
-      dest.right.beam = true
+    if split
+      left.part1
+      right.part1
     else
-      dest.beam = true
+      down.part1
     end
   end
 
@@ -41,8 +38,8 @@ class Node
     return @cache if @cache
     return 1 unless down
 
-    @cache = if down.split
-      down.left.part2 + down.right.part2
+    @cache = if split
+      left.part2 + right.part2
     else
       down.part2
     end
@@ -50,28 +47,24 @@ class Node
 end
 
 def parse(fname)
-  $split = 0
-
+  start = nil
   Node.reset
   File.read(fname).lines(chomp: true).each_with_index.map do |line, y|
     line.chars.each_with_index do |chr, x|
       node = Node.new(x, y, chr == '^')
-      node.beam = true if chr == 'S'
+      start = node if chr == 'S'
     end
   end
+  start
 end
 
-def part1(input)
-  beams = Node.all.each_value.select(&:beam)
-  while beams.any?
-    beams.each(&:activate)
-    beams = Node.all.each_value.select(&:beam)
-  end
-  $split
+def part1(node)
+  node.part1
+  Node.all.each_value.count { it.split && it.visited }
 end
 
-def part2(input)
-  Node.all.each_value.select(&:beam).first.part2
+def part2(node)
+  node.part2
 end
 
 if File.exist?('input')
