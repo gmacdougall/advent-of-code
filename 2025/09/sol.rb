@@ -1,10 +1,43 @@
 #! /usr/bin/env ruby
 # frozen_string_literal: true
 
+require 'pqueue'
 require 'set'
 
 $x_vals = []
 $y_vals = []
+
+class Square
+  def initialize(a, b)
+    @a = a
+    @b = b
+  end
+
+  attr_reader :a, :b
+
+  def x_range = @x_range ||= Range.new(*[a.x, b.x].sort)
+  def y_range = @y_range ||= Range.new(*[a.y, b.y].sort)
+
+  def x_vals_to_check = @x_vals_to_check ||= $x_vals.select { x_range.cover?(it) }
+  def y_vals_to_check = @y_vals_to_check ||= $y_vals.select { y_range.cover?(it) }
+
+  def size = x_range.size * y_range.size
+
+  # It is valid if all the values around the border are red or green (i.e not black)
+  def valid?
+    y_vals_to_check.all? do |y|
+      x_vals_to_check.minmax.all? do |x|
+        Node.find(x, y).color != :black
+      end
+    end && (
+      x_vals_to_check.all? do |x|
+        y_vals_to_check.minmax.all? do |y|
+          Node.find(x, y).color != :black
+        end
+      end
+    )
+  end
+end
 
 class Node
   def initialize(x, y)
@@ -46,10 +79,10 @@ class Node
     end
   end
 
-  def invalidate
+  def invalidate(set)
     return if @color
     @color = :black
-    adjacent.each { $to_invalidate << it unless it.color }
+    adjacent.each { set << it unless it.color }
   end
 end
 
@@ -66,7 +99,9 @@ end
 
 def part2(input)
   Node.reset
-  $to_invalidate = Set.new
+
+  # Set a global of the values listed in the input to limit the size of what
+  # we need to look at in our node map
   $x_vals = input.map(&:first).uniq.sort
   $y_vals = input.map(&:last).uniq.sort
 
@@ -76,60 +111,46 @@ def part2(input)
     end
   end
 
+  # Colour the spaces between green
   (input + [input.first]).each_cons(2) do |(a, b), (x, y)|
     Node.find(a, b).color = :red
     Node.find(x, y).color = :red
 
     if a == x
-      from, to = [b, y].minmax
-      ((from + 1)...to).select { $y_vals.include?(it) }.each do |ny|
-        Node.find(x, ny).color = :green
+      range = Range.new(*[b, y].minmax)
+      $y_vals.select { range.cover? it }.each do |ny|
+        Node.find(x, ny).color ||= :green
       end
     elsif b == y
-      from, to = [a, x].minmax
-      ((from + 1)...to).select { $x_vals.include?(it) }.each do |nx|
-        Node.find(nx, y).color = :green
+      range = Range.new(*[a, x].minmax)
+      $x_vals.select { range.cover? it }.each do |nx|
+        Node.find(nx, y).color ||= :green
       end
     else
       fail
     end
   end
 
-  $x_vals.minmax.each do |x|
-    $y_vals.each do |y|
-      $to_invalidate << Node.find(x, y)
-    end
+  # Invalidate all elements around the edge
+  to_invalidate = Set.new(
+    $x_vals.minmax.flat_map { |x| $y_vals.map { |y| Node.find(x, y) } } +
+    $y_vals.minmax.flat_map { |y| $x_vals.map { |x| Node.find(x, y) } }
+  )
+
+  while to_invalidate.any?
+    node = to_invalidate.first
+    to_invalidate.delete(node)
+    node.invalidate(to_invalidate)
   end
 
-  $x_vals.each do |x|
-    $y_vals.minmax.each do |y|
-      $to_invalidate << Node.find(x, y)
-    end
+  # Form a priority queue of squares to find the largest
+  red_squares = Node.all.values.select { it.color == :red }
+  pq = PQueue.new(red_squares.combination(2).map { Square.new(_1, _2) }) { _1.size > _2.size }
+
+  while square = pq.pop
+    return square.size if square.valid?
   end
-
-  while $to_invalidate.any?
-    node = $to_invalidate.first
-    $to_invalidate.delete(node)
-    node.invalidate
-  end
-
-  count = input.combination(2).size
-  i = 0
-
-  input.combination(2).map do |(a,b), (x,y)|
-    i += 1
-    puts "Computing #{i}/#{count}"
-    x_range = Range.new(*[a,x].sort)
-    y_range = Range.new(*[b,y].sort)
-
-    valid = $x_vals.select { x_range.cover?(it) }.all? do |cx|
-      $y_vals.select { y_range.cover?(it) }.all? do |cy|
-        Node.find(cx, cy).color != :black
-      end
-    end
-
-    valid ? x_range.size * y_range.size : 0
-  end.max
+  fail
 end
 
 if File.exist?('input')
@@ -145,6 +166,6 @@ class MyTest < Minitest::Test
   end
 
   def test_part2
-    # assert_equal(24, part2(parse('sample')))
+    assert_equal(24, part2(parse('sample')))
   end
 end
