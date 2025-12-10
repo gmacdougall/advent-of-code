@@ -7,6 +7,8 @@ GEM
       irb (~> 1.10)
       reline (>= 0.3.8)
     erb (6.0.0)
+    ffi (1.17.2)
+    ffi (1.17.2-x86_64-linux-gnu)
     io-console (0.8.1)
     irb (1.15.3)
       pp (>= 0.6.0)
@@ -56,6 +58,8 @@ GEM
     unicode-display_width (3.2.0)
       unicode-emoji (~> 4.1)
     unicode-emoji (4.1.0)
+    z3 (0.0.20251017)
+      ffi (~> 1.17)
 
 PLATFORMS
   ruby
@@ -65,6 +69,7 @@ DEPENDENCIES
   debug
   pqueue
   rubocop
+  z3
 
 BUNDLED WITH
    2.6.9
