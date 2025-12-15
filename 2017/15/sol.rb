@@ -28,7 +28,7 @@ end
 puts "Part 1: #{go(679, 771, 1, 1, 40_000_000)}"
 puts "Part 2: #{go(679, 771, 4, 8, 5_000_000)}"
 
-#require 'minitest/autorun'
+require 'minitest/autorun'
 
 class MyTest < Minitest::Test
   def test_part1
