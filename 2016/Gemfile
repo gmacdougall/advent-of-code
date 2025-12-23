@@ -1,0 +1,9 @@
+# frozen_string_literal: true
+
+source 'https://rubygems.org'
+
+gem 'debug'
+gem 'pqueue'
+gem 'rubocop'
+gem 'sorted_set'
+gem 'z3'
